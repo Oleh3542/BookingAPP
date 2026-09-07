@@ -93,7 +93,7 @@ public class RoomManagementService : IRoomManagementService
 
         if (hasFutureBookings)
         {
-            // Не видаляємо фізично, а деактивуємо, щоб зберегти цілісність історії бронювань
+            // не видаляємо фізично а деактивуємо щоб зберегти цілісність історії бронювань
             room.IsActive = false;
             room.UpdatedAt = DateTime.UtcNow;
             await _db.SaveChangesAsync(ct);
@@ -139,7 +139,49 @@ public class RoomManagementService : IRoomManagementService
 
         return available.Select(ToDto).ToList();
     }
+    public async Task<List<RoomAvailabilityDto>> GetAllWithAvailabilityAsync(RoomSearchRequest request, CancellationToken ct = default)
+    {
+        if (request.TimeTo <= request.TimeFrom)
+        {
+            throw new ValidationFailedException("Час завершення має бути пізніше за час початку.");
+        }
 
+        var start = request.Date.ToDateTime(request.TimeFrom);
+        var end = request.Date.ToDateTime(request.TimeTo);
+
+        var query = _db.ConferenceRooms
+            .Include(r => r.RoomServices).ThenInclude(rs => rs.Service)
+            .Where(r => r.IsActive)
+            .AsQueryable();
+
+        if (request.MinCapacity.HasValue)
+        {
+            query = query.Where(r => r.Capacity >= request.MinCapacity.Value);
+        }
+
+        var allRooms = await query.OrderBy(r => r.Name).ToListAsync(ct);
+
+        var busyRoomIds = await _db.Bookings
+            .Where(b => b.Status == BookingStatus.Confirmed &&
+                        b.StartTime < end && b.EndTime > start)
+            .Select(b => b.ConferenceRoomId)
+            .Distinct()
+            .ToListAsync(ct);
+
+        return allRooms.Select(room => new RoomAvailabilityDto
+        {
+            Id = room.Id,
+            Name = room.Name,
+            Capacity = room.Capacity,
+            BaseHourlyRate = room.BaseHourlyRate,
+            IsActive = room.IsActive,
+            IsAvailable = !busyRoomIds.Contains(room.Id),
+            AvailableServices = room.RoomServices
+                .Select(rs => new ServiceDto { Id = rs.Service.Id, Name = rs.Service.Name, Cost = rs.Service.Cost })
+                .OrderBy(s => s.Name)
+                .ToList()
+        }).ToList();
+    }
     private async Task<ConferenceRoom> LoadRoomAsync(Guid id, CancellationToken ct)
     {
         var room = await _db.ConferenceRooms

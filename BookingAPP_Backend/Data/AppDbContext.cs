@@ -31,7 +31,7 @@ public class AppDbContext : DbContext
                   .OnDelete(DeleteBehavior.Cascade);
         });
 
-        // BookingService (many-to-many join with price snapshot) 
+        // BookingService 
         modelBuilder.Entity<BookingService>(entity =>
         {
             entity.HasKey(bs => new { bs.BookingId, bs.ServiceId });

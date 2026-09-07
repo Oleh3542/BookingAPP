@@ -6,7 +6,7 @@ public class Service
 
     public string Name { get; set; } = string.Empty;
 
-    /// <summary>Фіксована вартість послуги за одне бронювання, грн.</summary>
+    // фіксована вартість послуги за одне бронювання
     public decimal Cost { get; set; }
 
     public bool IsActive { get; set; } = true;

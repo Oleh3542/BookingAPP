@@ -171,7 +171,7 @@ public class ReportService : IReportService
     private static (DateTime start, DateTime end) ToRange(DateOnly from, DateOnly to)
     {
         var start = from.ToDateTime(TimeOnly.MinValue);
-        var end = to.ToDateTime(TimeOnly.MinValue).AddDays(1); // включно з "to"
+        var end = to.ToDateTime(TimeOnly.MinValue).AddDays(1); 
         return (start, end);
     }
 }

@@ -83,5 +83,15 @@ namespace BookingAPP_Backend.DTOs
         [Range(1, 10000)]
         public int? MinCapacity { get; set; }
     }
+    public class RoomAvailabilityDto
+    {
+        public Guid Id { get; set; }
+        public string Name { get; set; } = string.Empty;
+        public int Capacity { get; set; }
+        public decimal BaseHourlyRate { get; set; }
+        public bool IsActive { get; set; }
+        public bool IsAvailable { get; set; }
+        public List<ServiceDto> AvailableServices { get; set; } = new();
+    }
 
 }

@@ -3,7 +3,7 @@ using Microsoft.EntityFrameworkCore;
 
 namespace BookingAPP_Backend.Data;
 
-// Наповнює базу початковими даними, описаними в технічному завданні
+// наповнює базу початковими даними, описаними в технічному завданні
 public static class SeedData
 {
     public static void Initialize(AppDbContext context)
@@ -27,7 +27,6 @@ public static class SeedData
 
         context.ConferenceRooms.AddRange(roomA, roomB, roomC);
         
-        // усі три послуги доступні для кожного залу за замовчуванням
         foreach (var room in new[] { roomA, roomB, roomC })
         {
             foreach (var service in new[] { projector, wifi, sound })

@@ -4,7 +4,7 @@ using BookingAPP_Backend.Common;
 
 namespace BookingAPP_Backend.Middleware;
 
-/// Централізована обробка винятків. Гарантує, що клієнт ніколи не побачить
+// централізована обробка винятків
 
 public class ExceptionHandlingMiddleware
 {

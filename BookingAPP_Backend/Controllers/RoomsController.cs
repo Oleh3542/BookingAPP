@@ -70,4 +70,8 @@ public class RoomsController : ControllerBase
         await _roomService.DeleteAsync(id, ct);
         return NoContent();
     }
+    [HttpGet("availability")]
+    [ProducesResponseType(typeof(List<RoomAvailabilityDto>), StatusCodes.Status200OK)]
+    public async Task<ActionResult<List<RoomAvailabilityDto>>> Availability([FromQuery] RoomSearchRequest request, CancellationToken ct)
+        => Ok(await _roomService.GetAllWithAvailabilityAsync(request, ct));
 }
