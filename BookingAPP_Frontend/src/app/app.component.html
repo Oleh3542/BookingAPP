@@ -1,0 +1,150 @@
+<h1>{{ title }}</h1>
+
+<!-- ==================== ПАРАМЕТРИ ПЕРІОДУ ==================== -->
+<section class="box">
+  <h2>Період бронювання</h2>
+  <p><small>Статус "вільний / заброньований" у таблиці нижче показано саме для цього періоду.</small></p>
+
+  <label>Дата</label>
+  <input type="date" [(ngModel)]="date">
+
+  <label>Час з</label>
+  <input type="time" [(ngModel)]="timeFrom">
+
+  <label>Час до</label>
+  <input type="time" [(ngModel)]="timeTo">
+
+  <label>Місткість від (опційно)</label>
+  <input type="number" min="1" [(ngModel)]="minCapacity">
+
+  <br>
+  <button (click)="loadRooms()" [disabled]="loadingRooms">
+    {{ loadingRooms ? 'Оновлюємо...' : 'Оновити список залів' }}
+  </button>
+
+  <p class="error" *ngIf="roomsError">{{ roomsError }}</p>
+</section>
+
+<!-- ==================== ТАБЛИЦЯ УСІХ ЗАЛІВ (сортована) ==================== -->
+<section class="box">
+  <h2>Усі зали ({{ rooms.length }})</h2>
+  <p *ngIf="!loadingRooms && !rooms.length">Залів не знайдено.</p>
+
+  <table *ngIf="rooms.length">
+    <thead>
+      <tr>
+        <th (click)="sortBy('name')" class="sortable">Назва {{ sortArrow('name') }}</th>
+        <th (click)="sortBy('capacity')" class="sortable">Місткість {{ sortArrow('capacity') }}</th>
+        <th (click)="sortBy('baseHourlyRate')" class="sortable">Ставка, грн/год {{ sortArrow('baseHourlyRate') }}</th>
+        <th>Послуги</th>
+        <th (click)="sortBy('isAvailable')" class="sortable">Статус {{ sortArrow('isAvailable') }}</th>
+        <th></th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr *ngFor="let room of rooms" [class.booked-row]="!room.isAvailable">
+        <td>{{ room.name }}</td>
+        <td>{{ room.capacity }} осіб</td>
+        <td>{{ room.baseHourlyRate }} грн</td>
+        <td>
+          <span *ngFor="let s of room.availableServices">{{ s.name }} (+{{ s.cost }}) </span>
+          <span *ngIf="!room.availableServices.length">—</span>
+        </td>
+        <td>
+          <span class="tag" [class.tag-red]="!room.isAvailable">
+            {{ room.isAvailable ? '✓ Вільний' : '✗ Заброньовано' }}
+          </span>
+        </td>
+        <td>
+          <button
+            *ngIf="room.isAvailable && selectedRoom?.id !== room.id"
+            (click)="selectRoom(room)">
+            Забронювати
+          </button>
+          <span *ngIf="selectedRoom?.id === room.id" class="tag">обрано ↓</span>
+          <span *ngIf="!room.isAvailable">—</span>
+        </td>
+      </tr>
+    </tbody>
+  </table>
+</section>
+
+<!-- ==================== ФОРМА БРОНЮВАННЯ ==================== -->
+<section class="box" *ngIf="selectedRoom">
+  <h2>Оформлення бронювання: {{ selectedRoom.name }}</h2>
+  <p><small>{{ date }}, {{ timeFrom }}–{{ timeTo }}</small></p>
+
+  <label>Ім'я клієнта</label>
+  <input type="text" [(ngModel)]="customerName">
+
+  <label>Email</label>
+  <input type="email" [(ngModel)]="customerEmail">
+
+  <div *ngIf="selectedRoom.availableServices.length">
+    <label>Додаткові послуги</label>
+    <div *ngFor="let s of selectedRoom.availableServices">
+      <input type="checkbox" [id]="s.id" [checked]="isServiceSelected(s.id)" (change)="toggleService(s.id)">
+      <label [for]="s.id" style="display:inline;font-weight:normal">{{ s.name }} (+{{ s.cost }} грн)</label>
+    </div>
+  </div>
+
+  <p class="error" *ngIf="bookingError">{{ bookingError }}</p>
+
+  <br>
+  <button (click)="book()" [disabled]="booking">{{ booking ? 'Бронюємо...' : 'Підтвердити бронювання' }}</button>
+  <button (click)="cancelSelection()">Скасувати</button>
+</section>
+
+<!-- ==================== РЕЗУЛЬТАТ ОСТАННЬОГО БРОНЮВАННЯ ==================== -->
+<section class="box success-box" *ngIf="lastBookingResult">
+  <h2>Бронювання підтверджено!</h2>
+  <p>Зал: <b>{{ lastBookingResult.roomName }}</b></p>
+  <p>Вартість оренди залу: {{ lastBookingResult.roomCost }} грн</p>
+  <p>Вартість послуг: {{ lastBookingResult.servicesCost }} грн</p>
+  <p><b>Разом: {{ lastBookingResult.totalCost }} грн</b></p>
+
+  <details>
+    <summary>Деталізація розрахунку по годинах</summary>
+    <ul>
+      <li *ngFor="let line of lastBookingResult.priceBreakdown">{{ line }}</li>
+    </ul>
+  </details>
+</section>
+
+<!-- ==================== ІСТОРІЯ ВСІХ БРОНЮВАНЬ ==================== -->
+<section class="box">
+  <h2>Історія бронювань</h2>
+  <button (click)="loadBookings()" [disabled]="loadingBookings">Оновити</button>
+
+  <p class="error" *ngIf="bookingsError">{{ bookingsError }}</p>
+  <p *ngIf="!loadingBookings && !allBookings.length">Бронювань поки немає.</p>
+
+  <table *ngIf="allBookings.length">
+    <thead>
+      <tr>
+        <th>Зал</th>
+        <th>Клієнт</th>
+        <th>Період</th>
+        <th>Сума</th>
+        <th>Статус</th>
+        <th></th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr *ngFor="let b of allBookings" [class.booked-row]="b.status === 'Cancelled'">
+        <td>{{ b.roomName }}</td>
+        <td>{{ b.customerName }}</td>
+        <td>{{ b.startTime | date:'dd.MM.yyyy HH:mm' }} – {{ b.endTime | date:'HH:mm' }}</td>
+        <td>{{ b.totalCost }} грн</td>
+        <td>
+          <span class="tag" [class.tag-red]="b.status === 'Cancelled'">
+            {{ b.status === 'Cancelled' ? '✗ Скасовано' : '✓ Активне' }}
+          </span>
+        </td>
+        <td>
+          <button (click)="cancelBooking(b)" *ngIf="b.status !== 'Cancelled'">Скасувати</button>
+        </td>
+      </tr>
+    </tbody>
+  </table>
+</section>

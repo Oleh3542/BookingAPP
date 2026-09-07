@@ -1,0 +1,26 @@
+.box {
+  border: 1px solid #ccc;
+  background: #fff;
+  padding: 16px 20px;
+  margin-bottom: 20px;
+  max-width: 900px;
+}
+
+.success-box {
+  border-color: #2c7a2c;
+  background: #f0fff0;
+}
+
+.booked-row {
+  opacity: 0.6;
+  background: #fafafa;
+}
+
+th.sortable {
+  cursor: pointer;
+  user-select: none;
+}
+
+th.sortable:hover {
+  background: #ddd;
+}
